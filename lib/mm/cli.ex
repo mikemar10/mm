@@ -16,15 +16,13 @@ defmodule MM.CLI do
         concurrent:  :integer,
         number:      :integer,
         help:        :boolean,
-        timeout:     :integer,
-        loadtest:    :boolean
+        timeout:     :integer
       ],
       aliases: [
         c: :concurrent,
         n: :number,
         h: :help,
-        t: :timeout,
-        l: :loadtest
+        t: :timeout
       ])
   end
   
@@ -32,11 +30,10 @@ defmodule MM.CLI do
     concurrency = Keyword.get(parsed, :concurrent, @default_concurrency)
     number      = Keyword.get(parsed, :number, @default_number_of_requests)
     timeout     = Keyword.get(parsed, :timeout, @default_timeout)
-    loadtest    = Keyword.get(parsed, :loadtest)
     help        = Keyword.get(parsed, :help)
 
-    if help, do: process(:help)
-    MM.benchmark(concurrency, number, timeout, loadtest, url)
+    if help, do: process(:true)
+    MM.benchmark(concurrency, number, timeout, url) 
   end
 
   defp process(:help) do

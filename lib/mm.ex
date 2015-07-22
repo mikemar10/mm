@@ -1,10 +1,8 @@
 defmodule MM do
-  def benchmark(concurrency, num_requests, timeout, loadtest, target) do
+  def benchmark(concurrency, num_requests, timeout, target) do
     setup_pool(concurrency, timeout)
-    case loadtest do
-      true -> initiate_requests(num_requests, target)
-      _    -> initiate_requests(num_requests, target) |> collect_results
-    end
+    initiate_requests(num_requests, target) 
+    |> collect_results
   end
 
   def setup_pool(concurrency, timeout) do
@@ -19,7 +17,12 @@ defmodule MM do
     0..num_requests
     |> Enum.map(fn n ->
       Task.async(fn ->
-        :timer.tc(&:hackney.get/4, [target, [], <<>>, options])
+        {time, results} = :timer.tc(&:hackney.get/4, [target, [], <<>>, options])
+        case results do
+          {:ok, _status, _headers, client} -> :hackney.body(client)
+          _ -> results
+        end
+        {time, results}
       end)
     end)
   end
