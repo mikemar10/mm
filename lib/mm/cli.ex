@@ -91,14 +91,14 @@ defmodule MM.CLI do
 
   defp status_codes(results) do
     IO.puts "HTTP STATUSES"
-    statuses = results
-               |> Enum.reduce(Map.new, fn {_, result}, map ->
-                 case result do
-                   {:ok, status, _, _} -> Map.update(map, status, 0, &(&1 + 1))
-                   {:error, reason}    -> Map.update(map, reason, 0, &(&1 + 1))
-                 end
-               end)
-               |> Enum.each(fn {k,v} -> IO.puts "#{k}: #{v}" end)
+    results
+    |> Enum.reduce(Map.new, fn {_, result}, map ->
+      case result do
+        {:ok, status, _, _} -> Map.update(map, status, 0, &(&1 + 1))
+        {:error, reason}    -> Map.update(map, reason, 0, &(&1 + 1))
+      end
+    end)
+    |> Enum.each(fn {k,v} -> IO.puts "#{k}: #{v}" end)
     results
   end
 

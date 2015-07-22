@@ -17,7 +17,11 @@ defmodule MM do
     0..num_requests
     |> Enum.map(fn n ->
       Task.async(fn ->
-        :timer.tc(&:hackney.get/4, [target, [], <<>>, options])
+        { time, results } = :timer.tc(&:hackney.get/4, [target, [], <<>>, options])
+        case results do
+          {:ok, status, _headers, _client} -> {time, {:ok, status, nil, nil}}
+          results -> {time, results}
+        end
       end)
     end)
   end
