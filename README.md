@@ -1,4 +1,6 @@
-Mm
+MM
 ==
 
-** TODO: Add description **
+** An HTTP benchmark tool written in elixir **
+
+Currently broken: timeouts

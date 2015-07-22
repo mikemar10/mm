@@ -1,25 +1,33 @@
 defmodule MM do
-  def benchmark(concurrency, num_requests, timeout, target) do
+  def benchmark(concurrency, num_requests, timeout, loadtest, target) do
+    setup_pool(concurrency, timeout)
+    case loadtest do
+      true -> initiate_requests(num_requests, target)
+      _    -> initiate_requests(num_requests, target) |> collect_results
+    end
+  end
+
+  def setup_pool(concurrency, timeout) do
     :ok = :hackney_pool.start_pool(:benchmark, [
       max_connections: concurrency,
       timeout: timeout * 1000
     ])
-    options = [pool: :benchmark, ssl_options: [verify_type: :verify_none]]
+  end
 
-    results = 0..num_requests
+  def initiate_requests(num_requests, target) do
+    options = [pool: :benchmark, ssl_options: [verify_type: :verify_none]]
+    0..num_requests
     |> Enum.map(fn n ->
       Task.async(fn ->
         :timer.tc(&:hackney.get/4, [target, [], <<>>, options])
       end)
     end)
-    |> Enum.with_index
-    |> Enum.map(fn {task, index} ->
-      result = Task.await(task, (10 + timeout) * 1000)
-      IO.write("\r[#{index}/#{num_requests}] completed")
-      result
-    end)
+  end
 
-    IO.puts ""
-    results
+  def collect_results(requests) do
+    requests
+    |> Enum.map(fn task ->
+      Task.await(task, 60 * 1000)
+    end)
   end
 end

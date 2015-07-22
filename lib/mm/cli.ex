@@ -13,16 +13,18 @@ defmodule MM.CLI do
   defp parse_args(args) do
     OptionParser.parse(args, 
       strict: [
-        concurrent: :integer,
-        number: :integer,
-        help: :boolean,
-        timeout: :integer
+        concurrent:  :integer,
+        number:      :integer,
+        help:        :boolean,
+        timeout:     :integer,
+        loadtest:    :boolean
       ],
       aliases: [
         c: :concurrent,
         n: :number,
         h: :help,
-        t: :timeout
+        t: :timeout,
+        l: :loadtest
       ])
   end
   
@@ -30,10 +32,11 @@ defmodule MM.CLI do
     concurrency = Keyword.get(parsed, :concurrent, @default_concurrency)
     number      = Keyword.get(parsed, :number, @default_number_of_requests)
     timeout     = Keyword.get(parsed, :timeout, @default_timeout)
+    loadtest    = Keyword.get(parsed, :loadtest)
     help        = Keyword.get(parsed, :help)
 
     if help, do: process(:help)
-    MM.benchmark(concurrency, number, timeout, url)
+    MM.benchmark(concurrency, number, timeout, loadtest, url)
   end
 
   defp process(:help) do
@@ -58,6 +61,7 @@ defmodule MM.CLI do
     |> fastest_response
     |> slowest_response
     |> average_response
+    |> standard_deviation
     |> status_codes
   end
 
@@ -91,13 +95,22 @@ defmodule MM.CLI do
   defp status_codes(results) do
     IO.puts "HTTP STATUSES"
     statuses = results
-    |> Enum.reduce(Map.new, fn {_, result}, map ->
-      case result do
-        {:ok, status, _, _} -> Map.update(map, status, 0, &(&1 + 1))
-        {:error, reason}    -> Map.update(map, reason, 0, &(&1 + 1))
-      end
-    end)
-    |> Enum.each(fn {k,v} -> IO.puts "#{k}: #{v}" end)
+               |> Enum.reduce(Map.new, fn {_, result}, map ->
+                 case result do
+                   {:ok, status, _, _} -> Map.update(map, status, 0, &(&1 + 1))
+                   {:error, reason}    -> Map.update(map, reason, 0, &(&1 + 1))
+                 end
+               end)
+               |> Enum.each(fn {k,v} -> IO.puts "#{k}: #{v}" end)
+    results
+  end
+
+  defp standard_deviation(results) do
+    times = Enum.map(results, fn {time, _} -> time end)
+    average = :lists.sum(times) / length(times)
+    deviations = Enum.map(times, fn t -> :math.pow(t - average, 2) end)
+    stdev = :math.sqrt(:lists.sum(deviations) / length(deviations)) |> to_seconds
+    IO.puts("Standard Deviation: #{stdev} seconds")
     results
   end
 
