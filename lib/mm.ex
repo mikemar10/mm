@@ -2,7 +2,7 @@ defmodule MM do
   def benchmark(concurrency, num_requests, timeout, target) do
     setup_pool(concurrency, timeout)
     initiate_requests(num_requests, target) 
-    |> collect_results
+    |> collect_results(timeout)
   end
 
   def setup_pool(concurrency, timeout) do
@@ -26,10 +26,10 @@ defmodule MM do
     end)
   end
 
-  def collect_results(requests) do
+  def collect_results(requests, timeout) do
     requests
     |> Enum.map(fn task ->
-      Task.await(task, 60 * 1000)
+      Task.await(task, (10 + timeout) * 1000)
     end)
   end
 end
